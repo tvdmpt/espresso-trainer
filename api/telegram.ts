@@ -1,4 +1,8 @@
 
+import { Redis } from "@upstash/redis";
+
+const redis = Redis.fromEnv();
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -36,6 +40,13 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
+    // Сохраняем пользователя для будущих напоминаний
+    await redis.sadd(
+      "espresso:telegram:chat_ids",
+      String(message.chat.id)
+    );
+
+    // Отправляем приветствие
     const result = await fetch(
       `https://api.telegram.org/bot${token}/sendMessage`,
       {
@@ -74,7 +85,7 @@ export default async function handler(req: any, res: any) {
 
     return res.status(200).json({ ok: true });
   } catch (error) {
-    console.error("Failed to send Telegram message:", error);
+    console.error("Telegram handler error:", error);
     return res.status(500).json({ ok: false });
   }
 }
